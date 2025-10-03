@@ -3,13 +3,13 @@ version: "3.9"
 services:
   db:
     image: postgres:16
-    container_name: pgdemo_db
+    container_name: ogsanalysis_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mydb
+      POSTGRES_DB: ogs_db
     ports:
-      - "5432:5432"      # optional; lets host tools connect (DBeaver/psql)
+      - "5432:5432" # to connect with psql from WSL while container is running
     volumes:
       - dbdata:/var/lib/postgresql/data
 
@@ -17,15 +17,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: pgdemo_app
+    container_name: ogsanalysis_app
     volumes:
-      - .:/app           # your code is live-mounted for fast edit/run cycles
+      - .:/app
+      - /home/ryanh/ogs_data:/data:ro
     environment:
       # Internal container-to-container connection string
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/mydb
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ogs_db
     depends_on:
       - db
-    command: sleep infinity  # VS Code attaches; you run scripts from the terminal
+    command: sleep infinity
 
 volumes:
   dbdata:
