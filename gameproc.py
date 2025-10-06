@@ -34,7 +34,7 @@ MOVE_TRANSFORMS = {
     "FLIP_T_B": lambda x, y: (8 - x, y),
     "FLIP_L_R": lambda x, y: (x, 8 - y),
     "FLIP_TL_BR": lambda x, y: (8 - y, 8 - x),
-    "FLIP_TR_BL": lambda x, y: (y, x)
+    "FLIP_TR_BL": lambda x, y: (y, x),
 }
 
 INVERSE_MOVE_TRANSFORMS = {
@@ -45,7 +45,7 @@ INVERSE_MOVE_TRANSFORMS = {
     "FLIP_T_B": lambda x, y: (8 - x, y),
     "FLIP_L_R": lambda x, y: (x, 8 - y),
     "FLIP_TL_BR": lambda x, y: (8 - y, 8 - x),
-    "FLIP_TR_BL": lambda x, y: (y, x)
+    "FLIP_TR_BL": lambda x, y: (y, x),
 }
 
 # relationship between BOARD_TRANSFORMS and MOVE_TRANSFORMS
@@ -72,7 +72,9 @@ def lexicographical_comparison(board1: np.ndarray, board2: np.ndarray) -> int:
     return 0
 
 
-def get_canonical_transform(board: np.ndarray, move_x: int = None, move_y: int = None) -> str:
+def get_canonical_transform(
+    board: np.ndarray, move_x: int = None, move_y: int = None
+) -> str:
     candidates = ["ID"]
     board1 = board
     for key, transform_fn in BOARD_TRANSFORMS.items():
@@ -102,7 +104,9 @@ def get_canonical_transform(board: np.ndarray, move_x: int = None, move_y: int =
     return candidate1
 
 
-def get_board_hashes_and_moves(gamedata: dict, num_moves: int = NUM_MOVES) -> list[tuple[bytes, tuple[int, int]]]:
+def get_board_hashes_and_moves(
+    gamedata: dict, num_moves: int = NUM_MOVES
+) -> list[tuple[bytes, tuple[int, int]]]:
     game = sente.Game(9)
     board_hashes_and_moves = []
     for movedata in gamedata["moves"][:num_moves]:
@@ -127,31 +131,14 @@ def get_board_hashes_and_moves(gamedata: dict, num_moves: int = NUM_MOVES) -> li
             # only add data if move is valid
             board_hashes_and_moves.append((tfm_board_hash, tfm_move))
         except sente.exceptions.IllegalMoveException as e:
-            game_id = gamedata['game_id']
+            game_id = gamedata["game_id"]
             # print(f"{game_id = } {movenum = }")
             # print(e)
             break
 
     return board_hashes_and_moves
 
+
 def get_game_board(game: sente.Game) -> np.ndarray:
     board = game.numpy(["black_stones", "white_stones"])
     return board[:, :, 0] + 2 * board[:, :, 1]
-
-# two equivalent games
-# moves1 = [(3,3), (15,3), (15,15), (3,15)]
-# moves2 = [(3,15), (15,15), (15,3), (3,3)]
-# give the same output for this code
-# game = sente.Game(19)
-# for move in moves1:
-#     board = get_game_board(game)
-#     key = get_canonical_transform(board, *move)
-#     tfm_board = BOARD_TRANSFORMS[key](board).copy()
-#     tfm_move = MOVE_TRANSFORMS[key](*move)
-#     tfm_hash = blake2b(tfm_board.data, digest_size=8).hexdigest()
-#     print(tfm_hash, tfm_move)
-#     game.play(move[0] + 1, move[1] + 1)
-
-# another two equivalent games
-# moves1 = [(2,3), (15,3), (3, 16), (15,15)]
-# moves2 = [(15,16), (15,3), (2,15), (3,3)]
