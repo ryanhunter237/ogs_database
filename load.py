@@ -2,6 +2,7 @@ import gzip
 import json
 from collections.abc import Iterator
 from typing import Any
+from tqdm import tqdm
 
 MIN_MOVES = 20
 GAMES_FILE = "/data/ogs_games_2013_to_2025-05.json.gz"
@@ -46,9 +47,12 @@ def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
         raise ValueError("stop must be > start")
 
     i = -1
+    total_games = stop - start
+    pbar = tqdm(total=total_games, desc="Loading games", position=0)
 
     with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:
         for raw_line in handle:
+            pbar.update(1)
             i += 1
             if i < start:
                 continue
@@ -59,6 +63,7 @@ def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
             gamedata: dict = json.loads(line)
             if game_filter(gamedata):
                 yield gamedata
+        pbar.close()
 
 def get_gamedata_by_game_id(game_id: int) -> dict:
     with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:
