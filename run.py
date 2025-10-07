@@ -1,9 +1,7 @@
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import os
 import psycopg2
 from psycopg2.extras import execute_values
-from time import time
-from tqdm import tqdm
+from time import time, sleep
 import multiprocessing as mp
 
 
@@ -37,7 +35,6 @@ def create_moves_table():
 
 
 def insert_batch(conn, data: list[RowData]):
-    print(f"Inserting {len(data)} rows")
     with conn.cursor() as cur:
         insert_sql = """
         INSERT INTO moves (game_id, move_num, board_hash, move_x, move_y)
@@ -73,6 +70,7 @@ def loader(gamedata_queue: mp.Queue, start: int, stop: int):
 def worker(gamedata_queue: mp.Queue, results_queue: mp.Queue):
     while True:
         gamedata_batch = gamedata_queue.get()
+
         if gamedata_batch is SENTINEL:
             results_queue.put(SENTINEL)
             break
@@ -101,6 +99,7 @@ def writer(results_queue: mp.Queue):
     conn.close()
 
 
+
 def run():
     start = 0
     stop = 100_000
@@ -127,25 +126,6 @@ def run():
     for w in workers:
         w.join()
     writer_proc.join()
-
-    # with tqdm(desc="Inserted rows", unit="row", position=1, leave=False) as insert_pbar:
-    #     with ProcessPoolExecutor(8) as executor:
-    #         futures = [
-    #             executor.submit(get_moves_data, gamedata, 50)
-    #             for gamedata in get_gamedata(start, stop)
-    #         ]
-
-    #         batch = []
-    #         for future in as_completed(futures):
-    #             results = future.result()
-    #             batch.extend(results)
-    #             if len(batch) >= INSERT_BATCH_SIZE:
-    #                 insert_batch(batch)
-    #                 insert_pbar.update(len(batch))
-    #                 batch = []
-    #         if batch:
-    #             insert_batch(batch)
-    #             insert_pbar.update(len(batch))
 
 if __name__ == "__main__":
     t0 = time()
