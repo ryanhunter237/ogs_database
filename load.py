@@ -39,16 +39,29 @@ def game_filter(gamedata: dict, min_moves: int = MIN_MOVES) -> bool:
             return False
     return True
 
-def get_gamedata(num_games: int | None = None) -> Iterator[dict[str, Any]]:
-    if num_games and num_games < 1:
-        raise ValueError("num_games must be None or >= 1")
-    i = 0
+def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
+    if start < 0:
+        raise ValueError("start must be >= 0")
+    if stop <= start:
+        raise ValueError("stop must be > start")
+    i = -1
     with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:
         for raw_line in handle:
+            i += 1
+            if i < start:
+                continue
+            if i >= stop:
+                break
             line = raw_line.strip()
             gamedata: dict = json.loads(line)
             if game_filter(gamedata):
                 yield gamedata
-                i += 1
-                if i == num_games:
-                    break
+
+def get_gamedata_by_game_id(game_id: int) -> dict:
+    with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            gamedata: dict = json.loads(line)
+            if gamedata["game_id"] == game_id:
+                return gamedata
+            

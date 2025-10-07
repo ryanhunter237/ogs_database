@@ -1,0 +1,1 @@
+Use `psql -h localhost -U postgres -d ogs_db` to connec to database from WSL.
