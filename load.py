@@ -2,6 +2,7 @@ import gzip
 import json
 from collections.abc import Iterator
 from typing import Any
+from tqdm.auto import tqdm
 
 MIN_MOVES = 20
 GAMES_FILE = "/data/ogs_games_2013_to_2025-05.json.gz"
@@ -39,12 +40,21 @@ def game_filter(gamedata: dict, min_moves: int = MIN_MOVES) -> bool:
             return False
     return True
 
+from typing import Iterator, Any
+from tqdm import tqdm
+import gzip
+import json
+
 def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
     if start < 0:
         raise ValueError("start must be >= 0")
     if stop <= start:
         raise ValueError("stop must be > start")
+
+    total = stop - start
     i = -1
+    pbar = None  # we'll create it lazily
+
     with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:
         for raw_line in handle:
             i += 1
@@ -52,10 +62,20 @@ def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
                 continue
             if i >= stop:
                 break
+
+            if pbar is None:
+                pbar = tqdm(total=total, desc="Processing games file", unit="line")
+
             line = raw_line.strip()
             gamedata: dict = json.loads(line)
             if game_filter(gamedata):
                 yield gamedata
+                
+            pbar.update(1)
+
+    if pbar is not None:
+        pbar.close()
+
 
 def get_gamedata_by_game_id(game_id: int) -> dict:
     with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:

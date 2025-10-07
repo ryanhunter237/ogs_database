@@ -50,8 +50,8 @@ def get_moves_data(gamedata: dict, num_moves: int) -> list[tuple[int, int, bytes
 
 
 def run():
-    start = 0
-    stop = 100_000
+    start = 100_000
+    stop = 200_000
     create_moves_table()
     with ProcessPoolExecutor(8) as executor:
         futures = [
