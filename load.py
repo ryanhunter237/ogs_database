@@ -52,13 +52,13 @@ def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
 
     with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:
         for raw_line in handle:
-            pbar.update(1)
             i += 1
             if i < start:
                 continue
             if i >= stop:
                 break
-
+            
+            pbar.update(1)
             line = raw_line.strip()
             gamedata: dict = json.loads(line)
             if game_filter(gamedata):

@@ -101,15 +101,15 @@ def writer(results_queue: mp.Queue):
 
 
 def run():
-    start = 0
-    stop = 100_000
+    start = 30_000_000
+    stop = 60_000_000
     print(f"Processing {start}:{stop}")
     create_moves_table()
 
     # gamedata_queue: mp.Queue[list[dict]]
     # results_queue: mp.Queue[list[RowData]] 
     gamedata_queue = mp.Queue(maxsize=50) 
-    results_queue = mp.Queue(maxsize=100)
+    results_queue = mp.Queue(maxsize=50)
 
     loader_proc = mp.Process(target=loader, args=(gamedata_queue, start, stop))
     writer_proc = mp.Process(target=writer, args=(results_queue,))
