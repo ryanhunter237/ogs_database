@@ -3,6 +3,7 @@ import os
 import psycopg2
 from psycopg2.extras import execute_values
 from time import time
+from tqdm import tqdm
 
 
 from load import get_gamedata
@@ -50,25 +51,29 @@ def get_moves_data(gamedata: dict, num_moves: int) -> list[tuple[int, int, bytes
 
 
 def run():
-    start = 400_000
-    stop = 500_000
+    start = 600_000
+    stop = 700_000
     print(f"Processing {start}:{stop}")
     create_moves_table()
-    with ProcessPoolExecutor(8) as executor:
-        futures = [
-            executor.submit(get_moves_data, gamedata, 50)
-            for gamedata in get_gamedata(start, stop)
-        ]
 
-        batch = []
-        for future in as_completed(futures):
-            results = future.result()
-            batch.extend(results)
-            if len(batch) >= INSERT_BATCH_SIZE:
+    with tqdm(desc="Inserted rows", unit="row", position=1, leave=False) as insert_pbar:
+        with ProcessPoolExecutor(8) as executor:
+            futures = [
+                executor.submit(get_moves_data, gamedata, 50)
+                for gamedata in get_gamedata(start, stop)
+            ]
+
+            batch = []
+            for future in as_completed(futures):
+                results = future.result()
+                batch.extend(results)
+                if len(batch) >= INSERT_BATCH_SIZE:
+                    insert_batch(batch)
+                    insert_pbar.update(len(batch))
+                    batch = []
+            if batch:
                 insert_batch(batch)
-                batch = []
-        if batch:
-            insert_batch(batch)
+                insert_pbar.update(len(batch))
 
 if __name__ == "__main__":
     t0 = time()
