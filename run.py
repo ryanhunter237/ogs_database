@@ -5,7 +5,7 @@ from time import time, sleep
 import multiprocessing as mp
 
 
-from load import get_gamedata
+from load import get_gamedata, game_filter
 from gameproc import get_board_hashes_and_moves
 
 NUM_WORKERS = 6
@@ -56,7 +56,7 @@ def get_moves_data(gamedata: dict, num_moves: int) -> list[RowData]:
 
 def loader(gamedata_queue: mp.Queue, start: int, stop: int):
     batch: list[dict] = []
-    for gamedata in get_gamedata(start, stop):
+    for gamedata in get_gamedata(start, stop, game_filter):
         batch.append(gamedata)
         if len(batch) == GAMEDATA_BATCH_SIZE:
             gamedata_queue.put(batch)

@@ -3,6 +3,7 @@ import json
 from collections.abc import Iterator
 from typing import Any
 from tqdm import tqdm
+from typing import Callable
 
 MIN_MOVES = 20
 GAMES_FILE = "/data/ogs_games_2013_to_2025-05.json.gz"
@@ -40,7 +41,7 @@ def game_filter(gamedata: dict, min_moves: int = MIN_MOVES) -> bool:
             return False
     return True
 
-def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
+def get_gamedata(start: int, stop: int, filter: Callable | None = None) -> Iterator[dict[str, Any]]:
     if start < 0:
         raise ValueError("start must be >= 0")
     if stop <= start:
@@ -61,7 +62,7 @@ def get_gamedata(start: int, stop: int) -> Iterator[dict[str, Any]]:
             pbar.update(1)
             line = raw_line.strip()
             gamedata: dict = json.loads(line)
-            if game_filter(gamedata):
+            if (filter is None) or game_filter(gamedata): 
                 yield gamedata
         pbar.close()
 
