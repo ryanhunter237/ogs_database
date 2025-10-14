@@ -42,7 +42,7 @@ def game_filter(gamedata: dict, size: int = 19, min_moves: int = MIN_MOVES) -> b
     # Only even games
     if gamedata.get("handicap") != 0:
         return False
-    if "komi" not in gamedata:
+    if not isinstance(gamedata.get("komi"), (float, int)):
         return False
     if (gamedata["komi"] > 7.5) or (gamedata["komi"] < 5.5):
         return False
