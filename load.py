@@ -23,13 +23,15 @@ def game_filter(gamedata: dict, size: int = 19, min_moves: int = MIN_MOVES) -> b
     # Make sure the ranked is explicitly marked as True or False
     if "ranked" not in gamedata:
         return False
+    if "start_time" not in gamedata:
+        return False
     # checking player_ids may be unnecessary once we've excluded original_sgfs,
     # but double checking
     if gamedata.get("white_player_id", 0) == 0:
         return False
     if gamedata.get("black_player_id", 0) == 0:
         return False
-    if gamedata.get('winner', 0) == 0:
+    if gamedata.get("winner", 0) == 0:
         return False
     # skip rengo games
     if gamedata.get("rengo"):
@@ -40,7 +42,9 @@ def game_filter(gamedata: dict, size: int = 19, min_moves: int = MIN_MOVES) -> b
     # Only even games
     if gamedata.get("handicap") != 0:
         return False
-    if (gamedata['komi'] > 7.5) or (gamedata['komi'] < 5.5):
+    if "komi" not in gamedata:
+        return False
+    if (gamedata["komi"] > 7.5) or (gamedata["komi"] < 5.5):
         return False
     if gamedata.get("initial_player", "black") != "black":
         return False
@@ -50,7 +54,10 @@ def game_filter(gamedata: dict, size: int = 19, min_moves: int = MIN_MOVES) -> b
             return False
     return True
 
-def get_gamedata(start: int, stop: int, filter: Callable | None = None) -> Iterator[dict[str, Any]]:
+
+def get_gamedata(
+    start: int, stop: int, filter: Callable | None = None
+) -> Iterator[dict[str, Any]]:
     if start < 0:
         raise ValueError("start must be >= 0")
     if stop <= start:
@@ -67,13 +74,14 @@ def get_gamedata(start: int, stop: int, filter: Callable | None = None) -> Itera
                 continue
             if i >= stop:
                 break
-            
+
             pbar.update(1)
             line = raw_line.strip()
             gamedata: dict = json.loads(line)
-            if (filter is None) or game_filter(gamedata): 
+            if (filter is None) or game_filter(gamedata):
                 yield gamedata
         pbar.close()
+
 
 def get_gamedata_by_game_id(game_id: int) -> dict:
     with gzip.open(GAMES_FILE, "rt", encoding="utf-8", errors="replace") as handle:
@@ -82,12 +90,15 @@ def get_gamedata_by_game_id(game_id: int) -> dict:
             gamedata: dict = json.loads(line)
             if gamedata["game_id"] == game_id:
                 return gamedata
-            
+
+
 def get_sample_gamedata(size: int, min_moves: int) -> Iterator[dict[str, Any]]:
     total_games = 564737
     pbar = tqdm(total=total_games, desc="Loading games", position=0)
 
-    with open("/data/sample.json",) as f:
+    with open(
+        "/data/sample.json",
+    ) as f:
         for raw_line in f:
             pbar.update(1)
             line = raw_line.strip()
