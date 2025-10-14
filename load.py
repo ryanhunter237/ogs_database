@@ -9,11 +9,10 @@ MIN_MOVES = 20
 GAMES_FILE = "/data/ogs_games_2013_to_2025-05.json.gz"
 
 
-def game_filter(gamedata: dict, min_moves: int = MIN_MOVES) -> bool:
+def game_filter(gamedata: dict, size: int = 19, min_moves: int = MIN_MOVES) -> bool:
     if len(gamedata.get("moves", [])) < min_moves:
         return False
-    # only want 9x9 games
-    if (gamedata.get("width", 9) != 9) or (gamedata.get("height", 9) != 9):
+    if (gamedata.get("width") != size) or (gamedata.get("height") != size):
         return False
     # this should always be true, but double checking
     if "game_id" not in gamedata:
@@ -21,17 +20,27 @@ def game_filter(gamedata: dict, min_moves: int = MIN_MOVES) -> bool:
     # skip uploaded games
     if "original_sgf" in gamedata:
         return False
+    # Make sure the ranked is explicitly marked as True or False
+    if "ranked" not in gamedata:
+        return False
     # checking player_ids may be unnecessary once we've excluded original_sgfs,
     # but double checking
     if gamedata.get("white_player_id", 0) == 0:
         return False
     if gamedata.get("black_player_id", 0) == 0:
         return False
+    if gamedata.get('winner', 0) == 0:
+        return False
+    # skip rengo games
+    if gamedata.get("rengo"):
+        return False
     # want handicap to be explicitly stated.
     if "handicap" not in gamedata:
         return False
-    # only want even games
-    if gamedata["handicap"] != 0:
+    # Only even games
+    if gamedata.get("handicap") != 0:
+        return False
+    if (gamedata['komi'] > 7.5) or (gamedata['komi'] < 5.5):
         return False
     if gamedata.get("initial_player", "black") != "black":
         return False
@@ -74,3 +83,15 @@ def get_gamedata_by_game_id(game_id: int) -> dict:
             if gamedata["game_id"] == game_id:
                 return gamedata
             
+def get_sample_gamedata(size: int, min_moves: int) -> Iterator[dict[str, Any]]:
+    total_games = 564737
+    pbar = tqdm(total=total_games, desc="Loading games", position=0)
+
+    with open("/data/sample.json",) as f:
+        for raw_line in f:
+            pbar.update(1)
+            line = raw_line.strip()
+            gamedata: dict = json.loads(line)
+            if game_filter(gamedata, size, min_moves):
+                yield gamedata
+        pbar.close()
